@@ -7,517 +7,104 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
             background-color: #f0f0f0;
         }
-        
-        .game-container {
-            text-align: center;
+        .container {
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        
-        .menu {
-            margin-bottom: 20px;
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
         }
-        
-        .menu button {
-            padding: 10px 20px;
-            margin: 5px;
-            font-size: 16px;
+        .button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-        }
-        
-        .menu button:hover {
-            background-color: #45a049;
-        }
-        
-        .game-code {
-            background-color: #e7f3ff;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .join-game {
-            margin: 10px 0;
-        }
-        
-        .join-game input {
-            padding: 8px;
             font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            margin-right: 10px;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
         }
-        
-        .chessboard {
-            display: grid;
-            grid-template-columns: repeat(8, 60px);
-            grid-template-rows: repeat(8, 60px);
-            gap: 0;
-            margin: 20px auto;
-            border: 2px solid #333;
+        .button:hover {
+            background: #45a049;
         }
-        
-        .square {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 40px;
-            cursor: pointer;
-            user-select: none;
+        .button.secondary {
+            background: #2196F3;
         }
-        
-        .white {
-            background-color: #f0d9b5;
+        .button.secondary:hover {
+            background: #1976D2;
         }
-        
-        .black {
-            background-color: #b58863;
-        }
-        
-        .selected {
-            background-color: #ffff99 !important;
-        }
-        
-        .possible-move {
-            background-color: #90EE90 !important;
-        }
-        
-        .game-info {
+        .input-group {
             margin: 20px 0;
-            font-size: 18px;
         }
-        
-        .player-info {
-            margin: 10px 0;
+        input[type="text"] {
             padding: 10px;
+            border: 2px solid #ddd;
             border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+            margin: 0 10px;
         }
-        
-        .current-player {
-            background-color: #e7f3ff;
-            font-weight: bold;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .status {
-            margin: 10px 0;
-            padding: 10px;
+        .instructions {
+            text-align: left;
+            background: #f9f9f9;
+            padding: 20px;
             border-radius: 5px;
-            font-weight: bold;
-        }
-        
-        .waiting {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .connected {
-            background-color: #d4edda;
-            color: #155724;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>Shakki - Moninpeli</h1>
+    <div class="container">
+        <h1>🏰 Shakki - Moninpeli</h1>
         
-        <div id="menu" class="menu">
-            <button onclick="createGame()">Luo uusi peli</button>
-            <div class="join-game">
-                <input type="text" id="gameCodeInput" placeholder="Syötä pelikoodi" maxlength="6">
-                <button onclick="joinGame()">Liity peliin</button>
-            </div>
+        <div>
+            <a href="game.html?host=true" class="button">Luo uusi peli</a>
         </div>
         
-        <div id="gameCode" class="game-code hidden">
-            Pelikoodi: <span id="codeDisplay"></span>
-            <div class="status waiting">Odotetaan toista pelaajaa...</div>
+        <div class="input-group">
+            <input type="text" id="gameCode" placeholder="Syötä pelikoodi">
+            <button class="button secondary" onclick="joinGame()">Liity peliin</button>
         </div>
         
-        <div id="gameArea" class="hidden">
-            <div class="game-info">
-                <div class="player-info" id="player1Info">Pelaaja 1 (Valkoinen): Sinä</div>
-                <div class="player-info" id="player2Info">Pelaaja 2 (Musta): -</div>
-                <div id="currentTurn">Valkoisen vuoro</div>
-            </div>
-            
-            <div class="chessboard" id="chessboard"></div>
-            
-            <div class="menu">
-                <button onclick="resetGame()">Uusi peli</button>
-                <button onclick="backToMenu()">Takaisin valikkoon</button>
-            </div>
+        <div class="instructions">
+            <h3>Ohjeet:</h3>
+            <ol>
+                <li><strong>Luo uusi peli:</strong> Klikkaa "Luo uusi peli" -nappia. Saat pelikoodin, jonka voit jakaa toiselle pelaajalle.</li>
+                <li><strong>Liity peliin:</strong> Syötä saamasi pelikoodi ja klikkaa "Liity peliin".</li>
+                <li><strong>Pelaaminen:</strong> Valkoinen aloittaa. Klikkaa nappulaa valitaksesi sen, ja klikkaa kohdetta siirtääksesi.</li>
+                <li><strong>Yhteys:</strong> Peli toimii suoraan selaimessa ilman palvelinta käyttäen WebRTC-teknologiaa.</li>
+            </ol>
         </div>
     </div>
 
     <script>
-        // Pelin tila
-        let gameState = {
-            board: [],
-            currentPlayer: 'white',
-            selectedSquare: null,
-            gameCode: null,
-            isHost: false,
-            playerRole: null,
-            gameStarted: false,
-            games: {} // Simuloi palvelinta
-        };
-
-        // Shakkinappulat Unicode-merkeillä
-        const pieces = {
-            'white': {
-                'king': '♔',
-                'queen': '♕',
-                'rook': '♖',
-                'bishop': '♗',
-                'knight': '♘',
-                'pawn': '♙'
-            },
-            'black': {
-                'king': '♚',
-                'queen': '♛',
-                'rook': '♜',
-                'bishop': '♝',
-                'knight': '♞',
-                'pawn': '♟'
-            }
-        };
-
-        // Alusta shakkilauta
-        function initializeBoard() {
-            const board = Array(8).fill().map(() => Array(8).fill(null));
-            
-            // Mustat nappulat
-            board[0] = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'].map(piece => ({type: piece, color: 'black'}));
-            board[1] = Array(8).fill({type: 'pawn', color: 'black'});
-            
-            // Valkoiset nappulat
-            board[6] = Array(8).fill({type: 'pawn', color: 'white'});
-            board[7] = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'].map(piece => ({type: piece, color: 'white'}));
-            
-            return board;
-        }
-
-        // Luo shakkilauta HTML:ään
-        function createChessboard() {
-            const chessboard = document.getElementById('chessboard');
-            chessboard.innerHTML = '';
-            
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const square = document.createElement('div');
-                    square.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
-                    square.dataset.row = row;
-                    square.dataset.col = col;
-                    square.onclick = () => handleSquareClick(row, col);
-                    
-                    const piece = gameState.board[row][col];
-                    if (piece) {
-                        square.textContent = pieces[piece.color][piece.type];
-                    }
-                    
-                    chessboard.appendChild(square);
-                }
-            }
-        }
-
-        // Käsittele ruudun klikkaus
-        function handleSquareClick(row, col) {
-            if (!gameState.gameStarted) return;
-            
-            // Tarkista onko pelaajan vuoro
-            if ((gameState.currentPlayer === 'white' && gameState.playerRole !== 'white') ||
-                (gameState.currentPlayer === 'black' && gameState.playerRole !== 'black')) {
-                return;
-            }
-
-            const clickedPiece = gameState.board[row][col];
-            
-            if (gameState.selectedSquare) {
-                const [selectedRow, selectedCol] = gameState.selectedSquare;
-                
-                if (row === selectedRow && col === selectedCol) {
-                    // Poista valinta
-                    clearSelection();
-                } else if (isValidMove(selectedRow, selectedCol, row, col)) {
-                    // Tee siirto
-                    makeMove(selectedRow, selectedCol, row, col);
-                    clearSelection();
-                    switchPlayer();
-                    updateDisplay();
-                } else if (clickedPiece && clickedPiece.color === gameState.currentPlayer) {
-                    // Valitse uusi nappula
-                    selectSquare(row, col);
-                } else {
-                    clearSelection();
-                }
-            } else if (clickedPiece && clickedPiece.color === gameState.currentPlayer) {
-                selectSquare(row, col);
-            }
-        }
-
-        // Valitse ruutu
-        function selectSquare(row, col) {
-            gameState.selectedSquare = [row, col];
-            updateDisplay();
-        }
-
-        // Poista valinta
-        function clearSelection() {
-            gameState.selectedSquare = null;
-            updateDisplay();
-        }
-
-        // Tarkista onko siirto sallittu (yksinkertainen versio)
-        function isValidMove(fromRow, fromCol, toRow, toCol) {
-            const piece = gameState.board[fromRow][fromCol];
-            const targetPiece = gameState.board[toRow][toCol];
-            
-            // Ei voi syödä omaa nappulaa
-            if (targetPiece && targetPiece.color === piece.color) {
-                return false;
-            }
-            
-            // Yksinkertainen siirtojen tarkistus (ei täydellinen)
-            const rowDiff = Math.abs(toRow - fromRow);
-            const colDiff = Math.abs(toCol - fromCol);
-            
-            switch (piece.type) {
-                case 'pawn':
-                    const direction = piece.color === 'white' ? -1 : 1;
-                    const startRow = piece.color === 'white' ? 6 : 1;
-                    
-                    if (colDiff === 0 && !targetPiece) {
-                        if (toRow === fromRow + direction) return true;
-                        if (fromRow === startRow && toRow === fromRow + 2 * direction) return true;
-                    } else if (colDiff === 1 && rowDiff === 1 && targetPiece && toRow === fromRow + direction) {
-                        return true;
-                    }
-                    return false;
-                    
-                case 'rook':
-                    return (rowDiff === 0 || colDiff === 0) && isPathClear(fromRow, fromCol, toRow, toCol);
-                    
-                case 'bishop':
-                    return rowDiff === colDiff && isPathClear(fromRow, fromCol, toRow, toCol);
-                    
-                case 'queen':
-                    return (rowDiff === 0 || colDiff === 0 || rowDiff === colDiff) && isPathClear(fromRow, fromCol, toRow, toCol);
-                    
-                case 'king':
-                    return rowDiff <= 1 && colDiff <= 1;
-                    
-                case 'knight':
-                    return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
-                    
-                default:
-                    return false;
-            }
-        }
-
-        // Tarkista onko reitti vapaa
-        function isPathClear(fromRow, fromCol, toRow, toCol) {
-            const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
-            const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
-            
-            let currentRow = fromRow + rowStep;
-            let currentCol = fromCol + colStep;
-            
-            while (currentRow !== toRow || currentCol !== toCol) {
-                if (gameState.board[currentRow][currentCol]) {
-                    return false;
-                }
-                currentRow += rowStep;
-                currentCol += colStep;
-            }
-            
-            return true;
-        }
-
-        // Tee siirto
-        function makeMove(fromRow, fromCol, toRow, toCol) {
-            gameState.board[toRow][toCol] = gameState.board[fromRow][fromCol];
-            gameState.board[fromRow][fromCol] = null;
-        }
-
-        // Vaihda pelaaja
-        function switchPlayer() {
-            gameState.currentPlayer = gameState.currentPlayer === 'white' ? 'black' : 'white';
-        }
-
-        // Päivitä näyttö
-        function updateDisplay() {
-            createChessboard();
-            
-            // Korosta valittu ruutu
-            if (gameState.selectedSquare) {
-                const [row, col] = gameState.selectedSquare;
-                const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-                square.classList.add('selected');
-                
-                // Näytä mahdolliset siirrot
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        if (isValidMove(row, col, r, c)) {
-                            const moveSquare = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
-                            moveSquare.classList.add('possible-move');
-                        }
-                    }
-                }
-            }
-            
-            // Päivitä vuorotiedot
-            document.getElementById('currentTurn').textContent = 
-                gameState.currentPlayer === 'white' ? 'Valkoisen vuoro' : 'Mustan vuoro';
-            
-            // Korosta nykyinen pelaaja
-            document.getElementById('player1Info').classList.toggle('current-player', 
-                gameState.currentPlayer === 'white');
-            document.getElementById('player2Info').classList.toggle('current-player', 
-                gameState.currentPlayer === 'black');
-        }
-
-        // Luo uusi peli
-        function createGame() {
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            gameState.gameCode = code;
-            gameState.isHost = true;
-            gameState.playerRole = 'white';
-            gameState.board = initializeBoard();
-            gameState.currentPlayer = 'white';
-            gameState.gameStarted = false;
-            
-            // Simuloi pelin tallentaminen
-            gameState.games[code] = {
-                board: gameState.board,
-                currentPlayer: gameState.currentPlayer,
-                players: ['host'],
-                gameStarted: false
-            };
-            
-            document.getElementById('menu').classList.add('hidden');
-            document.getElementById('gameCode').classList.remove('hidden');
-            document.getElementById('codeDisplay').textContent = code;
-            
-            // Tarkista säännöllisesti onko toinen pelaaja liittynyt
-            checkForSecondPlayer();
-        }
-
-        // Liity peliin
         function joinGame() {
-            const code = document.getElementById('gameCodeInput').value.toUpperCase();
-            if (!code) {
+            const gameCode = document.getElementById('gameCode').value.trim();
+            if (gameCode) {
+                window.location.href = `game.html?join=${encodeURIComponent(gameCode)}`;
+            } else {
                 alert('Syötä pelikoodi!');
-                return;
-            }
-            
-            // Simuloi pelin hakeminen
-            const game = gameState.games[code];
-            if (!game) {
-                alert('Peliä ei löytynyt!');
-                return;
-            }
-            
-            if (game.players.length >= 2) {
-                alert('Peli on jo täynnä!');
-                return;
-            }
-            
-            gameState.gameCode = code;
-            gameState.isHost = false;
-            gameState.playerRole = 'black';
-            gameState.board = game.board;
-            gameState.currentPlayer = game.currentPlayer;
-            gameState.gameStarted = true;
-            
-            // Päivitä pelin tila
-            game.players.push('guest');
-            game.gameStarted = true;
-            
-            startGame();
-        }
-
-        // Tarkista onko toinen pelaaja liittynyt
-        function checkForSecondPlayer() {
-            const game = gameState.games[gameState.gameCode];
-            if (game && game.players.length === 2) {
-                gameState.gameStarted = true;
-                startGame();
-            } else {
-                setTimeout(checkForSecondPlayer, 1000);
             }
         }
-
-        // Aloita peli
-        function startGame() {
-            document.getElementById('menu').classList.add('hidden');
-            document.getElementById('gameCode').classList.add('hidden');
-            document.getElementById('gameArea').classList.remove('hidden');
-            
-            // Päivitä pelaajatiedot
-            if (gameState.playerRole === 'white') {
-                document.getElementById('player1Info').textContent = 'Pelaaja 1 (Valkoinen): Sinä';
-                document.getElementById('player2Info').textContent = 'Pelaaja 2 (Musta): Vastustaja';
-            } else {
-                document.getElementById('player1Info').textContent = 'Pelaaja 1 (Valkoinen): Vastustaja';
-                document.getElementById('player2Info').textContent = 'Pelaaja 2 (Musta): Sinä';
+        
+        // Enter-näppäin liittymiseen
+        document.getElementById('gameCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                joinGame();
             }
-            
-            updateDisplay();
-        }
-
-        // Nollaa peli
-        function resetGame() {
-            gameState.board = initializeBoard();
-            gameState.currentPlayer = 'white';
-            gameState.selectedSquare = null;
-            updateDisplay();
-        }
-
-        // Palaa valikkoon
-        function backToMenu() {
-            // Nollaa pelin tila
-            gameState = {
-                board: [],
-                currentPlayer: 'white',
-                selectedSquare: null,
-                gameCode: null,
-                isHost: false,
-                playerRole: null,
-                gameStarted: false,
-                games: gameState.games // Säilytä pelit
-            };
-            
-            document.getElementById('menu').classList.remove('hidden');
-            document.getElementById('gameCode').classList.add('hidden');
-            document.getElementById('gameArea').classList.add('hidden');
-            document.getElementById('gameCodeInput').value = '';
-        }
-
-        // Alusta peli sivun latautuessa
-        window.onload = function() {
-            gameState.board = initializeBoard();
-        };
+        });
     </script>
 </body>
 </html>
+
