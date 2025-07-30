@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shakki</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 0;
+            margin: 20px auto;
+            border: 2px solid #333;
+        }
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .square.light {
+            background-color: #f0d9b5;
+        }
+        .square.dark {
+            background-color: #b58863;
+        }
+        .square.selected {
+            background-color: #ffff00 !important;
+        }
+        .square.possible-move {
+            background-color: #90EE90 !important;
+        }
+        .square.last-move {
+            background-color: #FFB6C1 !important;
+        }
+        .status {
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .connection-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .game-code {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .back-button {
+            background: #666;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🏰 Shakki</h1>
+        
+        <div id="connectionStatus" class="connection-info">
+            Yhdistetään...
+        </div>
+        
+        <div id="gameCode" class="game-code" style="display: none;">
+            Pelikoodi: <span id="codeDisplay"></span>
+        </div>
+        
+        <div id="status" class="status">Odotetaan toista pelaajaa...</div>
+        
+        <div id="board" class="board"></div>
+        
+        <a href="index.html" class="back-button">← Takaisin</a>
+    </div>
+
+    <script>
+        // Shakki-pelin logiikka
+        class ChessGame {
+            constructor() {
+                this.board = this.initializeBoard();
+                this.currentPlayer = 'white';
+                this.selectedSquare = null;
+                this.gameStarted = false;
+                this.isHost = false;
+                this.playerColor = null;
+                this.lastMove = null;
+                this.connection = null;
+                this.gameCode = null;
+                
+                this.initializeConnection();
+                this.renderBoard();
+            }
+            
+            initializeBoard() {
+                const board = Array(8).fill(null).map(() => Array(8).fill(null));
+                
+                // Mustat nappulat
+                board[0] = ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'];
+                board[1] = Array(8).fill('♟');
+                
+                // Valkoiset nappulat
+                board[6] = Array(8).fill('♙');
+                board[7] = ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖'];
+                
+                return board;
+            }
+            
+            async initializeConnection() {
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                if (urlParams.has('host')) {
+                    this.isHost = true;
+                    this.playerColor = 'white';
+                    await this.createGame();
+                } else if (urlParams.has('join')) {
+                    this.isHost = false;
+                    this.playerColor = 'black';
+                    this.gameCode = urlParams.get('join');
+                    await this.joinGame(this.gameCode);
+                }
+            }
+            
+            async createGame() {
+                this.gameCode = this.generateGameCode();
+                document.getElementById('gameCode').style.display = 'block';
+                document.getElementById('codeDisplay').textContent = this.gameCode;
+                
+                try {
+                    this.connection = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
+                        ]
+                    });
+                    
+                    const dataChannel = this.connection.createDataChannel('game');
+                    this.setupDataChannel(dataChannel);
+                    
+                    const offer = await this.connection.createOffer();
+                    await this.connection.setLocalDescription(offer);
+                    
+                    this.connection.onicecandidate = (event) => {
+                        if (event.candidate === null) {
+                            // Kaikki ICE-kandidaatit kerätty
+                            const gameData = {
+                                offer: this.connection.localDescription,
+                                gameCode: this.gameCode
+                            };
+                            localStorage.setItem(`chess_game_${this.gameCode}`, JSON.stringify(gameData));
+                            this.updateStatus('Odotetaan toista pelaajaa...');
+                        }
+                    };
+                    
+                    this.waitForPlayer();
+                } catch (error) {
+                    console.error('Virhe pelin luomisessa:', error);
+                    this.updateStatus('Virhe pelin luomisessa');
+                }
+            }
+            
+            async joinGame(gameCode) {
+                try {
+                    const gameData = JSON.parse(localStorage.getItem(`chess_game_${gameCode}`));
+                    if (!gameData) {
+                        this.updateStatus('Peliä ei löytynyt!');
+                        return;
+                    }
+                    
+                    this.connection = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
+                        ]
+                    });
+                    
+                    this.connection.ondatachannel = (event) => {
+                        this.setupDataChannel(event.channel);
+                    };
+                    
+                    await this.connection.setRemoteDescription(gameData.offer);
+                    const answer = await this.connection.createAnswer();
+                    await this.connection.setLocalDescription(answer);
+                    
+                    this.connection.onicecandidate = (event) => {
+                        if (event.candidate === null) {
+                            // Tallenna vastaus
+                            gameData.answer = this.connection.localDescription;
+                            localStorage.setItem(`chess_game_${gameCode}`, JSON.stringify(gameData));
+                            this.updateStatus('Yhdistetään...');
+                        }
+                    };
+                    
+                } catch (error) {
+                    console.error('Virhe peliin liittymisessä:', error);
+                    this.updateStatus('Virhe peliin liittymisessä');
+                }
+            }
+            
+            waitForPlayer() {
+                const checkForAnswer = () => {
+                    const gameData = JSON.parse(localStorage.getItem(`chess_game_${this.gameCode}`));
+                    if (gameData && gameData.answer) {
+                        this.connection.setRemoteDescription(gameData.answer);
+                        return;
+                    }
+                    setTimeout(checkForAnswer, 1000);
+                };
+                checkForAnswer();
+            }
+            
+            setupDataChannel(channel) {
+                channel.onopen = () => {
+                    this.updateStatus('Yhteys muodostettu! Peli alkaa.');
+                    this.gameStarted = true;
+                    this.updateTurnStatus();
+                };
+                
+                channel.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.handleRemoteMove(data);
+                };
+                
+                this.dataChannel = channel;
+            }
+            
+            generateGameCode() {
+                return Math.random().toString(36).substring(2, 8).toUpperCase();
+            }
+            
+            updateStatus(message) {
+                document.getElementById('connectionStatus').textContent = message;
+            }
+            
+            updateTurnStatus() {
+                const status = document.getElementById('status');
+                if (!this.gameStarted) {
+                    status.textContent = 'Odotetaan toista pelaajaa...';
+                    return;
+                }
+                
+                const isMyTurn = this.currentPlayer === this.playerColor;
+                if (isMyTurn) {
+                    status.textContent = `Sinun vuorosi (${this.playerColor === 'white' ? 'Valkoinen' : 'Musta'})`;
+                } else {
+                    status.textContent = `Vastustajan vuoro (${this.currentPlayer === 'white' ? 'Valkoinen' : 'Musta'})`;
+                }
+            }
+            
+            renderBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+                
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const square = document.createElement('div');
+                        square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                        square.dataset.row = row;
+                        square.dataset.col = col;
+                        
+                        if (this.board[row][col]) {
+                            square.textContent = this.board[row][col];
+                        }
+                        
+                        // Korostukset
+                        if (this.selectedSquare && this.selectedSquare.row === row && this.selectedSquare.col === col) {
+                            square.classList.add('selected');
+                        }
+                        
+                        
